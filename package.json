@@ -1,0 +1,16 @@
+{
+  "name": "find-streaming-v2",
+  "version": "1.0.0",
+  "description": "Find Streaming V2",
+  "repository": {
+    "type": "git",
+    "url": "find-streaming-v2"
+  },
+  "license": "ISC",
+  "author": "Sheriff-A",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
