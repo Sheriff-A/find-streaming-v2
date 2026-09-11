@@ -1,4 +1,5 @@
 package org.sheriffa.backend.watchlist;
 
-public enum Visibility {
+public enum WatchlistVisibility {
+    PUBLIC, PRIVATE, UNLISTED
 }
