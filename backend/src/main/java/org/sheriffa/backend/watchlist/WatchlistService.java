@@ -1,5 +1,6 @@
 package org.sheriffa.backend.watchlist;
 
+import org.sheriffa.backend.common.ForbiddenException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,15 +15,23 @@ public class WatchlistService {
         this.watchlistRepository = watchlistRepository;
     }
 
+    private Watchlist optionalGetWatchList(UUID id) {
+        return watchlistRepository.findById(id)
+                .orElseThrow(() -> new WatchlistNotFoundException(id));
+    }
+
+    private boolean isWatchlistOwner(Watchlist watchlist, UUID requesterId) {
+        return watchlist.getOwnerId().equals(requesterId);
+    }
+
     public List<Watchlist> getWatchlistForOwner(UUID ownerId) {
         return watchlistRepository.findAllByOwnerId(ownerId);
     }
 
     public Watchlist getWatchlistById(UUID id, UUID requesterId) {
-        Watchlist watchlist = watchlistRepository.findById(id)
-                .orElseThrow(() -> new WatchlistNotFoundException(id));
+        Watchlist watchlist = optionalGetWatchList(id);
 
-        boolean isOwner = watchlist.getOwnerId().equals(requesterId);
+        boolean isOwner = isWatchlistOwner(watchlist, requesterId);
         if (watchlist.getVisibility() == WatchlistVisibility.PRIVATE && !isOwner) {
             // A non-owner asking for a private watchlist
             // Returns as if nonexistent
@@ -37,15 +46,46 @@ public class WatchlistService {
         return watchlistRepository.insert(toCreate);
     }
 
-    // TODO: updateWatchlist(UUID id, UUID requesterId, String name, String description, WatchlistVisibility visibility)
-    //   1. watchlistRepository.findById(id), else throw WatchlistNotFoundException - same as getWatchlistById.
-    //   2. if requesterId doesn't match watchlist.getOwnerId(), throw WatchlistForbiddenException.
-    //      (Forbidden is fine here, unlike the read path above - the caller already knows this id
-    //      exists since they're the one trying to act on it, so there's nothing left to hide.)
-    //   3. watchlistRepository.update(id, name, description, visibility) and return the result
-    //      (it returns Optional<Watchlist> - empty would mean the row vanished between steps 1
-    //      and 3, which .orElseThrow(() -> new WatchlistNotFoundException(id)) handles cleanly).
+    public Watchlist updateWatchlist(UUID id, UUID requesterId, String name, String description, WatchlistVisibility visibility) {
+        Watchlist watchlist = optionalGetWatchList(id);
 
-    // TODO: deleteWatchlist(UUID id, UUID requesterId)
-    //   Same ownership check as updateWatchlist (steps 1-2), then watchlistRepository.deleteById(id).
+        if (!isWatchlistOwner(watchlist, requesterId)) {
+            // A non-owner asking to update a watchlist
+            // Forbidden.
+            // Cannot update a watchlist that's not yours.'
+            throw new WatchlistForbiddenException(id);
+        }
+        Watchlist toUpdate = new Watchlist(id, requesterId, name, description, visibility, null, null);
+        return watchlistRepository.update(id, toUpdate).orElseThrow(() -> new WatchlistNotFoundException(id));
+    }
+
+    public void deleteWatchlist(UUID id, UUID requesterId) {
+        Watchlist watchlist = optionalGetWatchList(id);
+
+        if (!isWatchlistOwner(watchlist, requesterId)) {
+            // A non-owner asking to delete a watchlist
+            // Forbidden.
+            // Cannot delete a watchlist that's not yours.'
+            throw new WatchlistForbiddenException(id);
+        }
+        watchlistRepository.deleteById(id);
+    }
+
+    public Watchlist patchWatchlist(UUID id, UUID requesterId, String name, String description, WatchlistVisibility visibility) {
+        Watchlist watchlist = optionalGetWatchList(id);
+
+        if (!isWatchlistOwner(watchlist, requesterId)) {
+            // A non-owner asking to patch a watchlist
+            // Forbidden.
+            // Cannot patch a watchlist that's not yours.'
+            throw new WatchlistForbiddenException(id);
+        }
+
+        String updatedName = name != null ? name : watchlist.getName();
+        String updatedDescription = description != null ? description : watchlist.getDescription();
+        WatchlistVisibility updatedVisibility = visibility != null ? visibility : watchlist.getVisibility();
+
+        Watchlist toPatch = new Watchlist(id, requesterId, updatedName, updatedDescription, updatedVisibility, null, null);
+        return watchlistRepository.update(id, toPatch).orElseThrow(() -> new WatchlistNotFoundException(id));
+    }
 }
