@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
@@ -17,6 +18,11 @@ public class ApiExceptionHandler {
     private ResponseEntity<ApiError> build(HttpStatus status, String message) {
         ApiError body = new ApiError(OffsetDateTime.now(), status.value(), status.getReasonPhrase(), message);
         return ResponseEntity.status(status).body(body);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return build(HttpStatus.BAD_REQUEST, "Invalid value for " + ex.getName() + ": " + ex.getValue());
     }
 
     @ExceptionHandler(NotFoundException.class)
