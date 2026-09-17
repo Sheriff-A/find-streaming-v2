@@ -1,9 +1,12 @@
 package org.sheriffa.backend.watchlist;
 
+import jakarta.validation.Valid;
+import org.sheriffa.backend.watchlist.dto.CreateWatchlistRequest;
 import org.sheriffa.backend.watchlist.dto.GetWatchlistResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,34 +35,40 @@ public class WatchlistController {
     }
 
     @GetMapping("/{watchlistId}")
-    public void getWatchlistById(@PathVariable String watchlistId) {
+    public ResponseEntity<GetWatchlistResponse> getWatchlistById(@PathVariable UUID watchlistId) {
+        Watchlist response = watchlistService.getWatchlistById(watchlistId, CURRENT_OWNER_ID);
+        return ResponseEntity.ok(GetWatchlistResponse.from(response));
     }
 
     @PutMapping("/{watchlistId}")
-    public void updateWatchlist(@PathVariable String watchlistId) {
+    public void updateWatchlist(@PathVariable UUID watchlistId) {
     }
 
     @PostMapping("/")
-    public void createWatchlist() {
+    public ResponseEntity<GetWatchlistResponse> createWatchlist(@Valid @RequestBody CreateWatchlistRequest request) {
+        Watchlist watchlist = watchlistService.createWatchlist(CURRENT_OWNER_ID, request.name(), request.description(), request.visibility());
+        URI location = URI.create("/api/v1/watchlist/" + watchlist.getId());
+        return ResponseEntity.created(location).body(GetWatchlistResponse.from(watchlist));
+
     }
 
     @DeleteMapping("/{watchlistId}")
-    public void deleteWatchlist(@PathVariable String watchlistId) {
+    public void deleteWatchlist(@PathVariable UUID watchlistId) {
     }
 
     @GetMapping("/{watchlistId}/media")
-    public void getWatchlistMedia(@PathVariable String watchlistId) {
+    public void getWatchlistMedia(@PathVariable UUID watchlistId) {
     }
 
     @PutMapping("/{watchlistId}/media")
-    public void updateWatchlistMedia(@PathVariable String watchlistId) {
+    public void updateWatchlistMedia(@PathVariable UUID watchlistId) {
     }
 
     @PostMapping("/{watchlistId}/media")
-    public void addWatchlistMedia(@PathVariable String watchlistId) {
+    public void addWatchlistMedia(@PathVariable UUID watchlistId) {
     }
 
     @DeleteMapping("/{watchlistId}/media")
-    public void removeWatchlistMedia(@PathVariable String watchlistId) {
+    public void removeWatchlistMedia(@PathVariable UUID watchlistId) {
     }
 }
