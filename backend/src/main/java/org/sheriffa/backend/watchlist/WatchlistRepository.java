@@ -59,7 +59,7 @@ public class WatchlistRepository {
         return jdbcTemplate.queryForObject(sql, params, ROW_MAPPER);
     }
 
-    public Optional<Watchlist> update(UUID id, String name, String description, WatchlistVisibility visibility) {
+    public Optional<Watchlist> update(UUID id, Watchlist watchlist) {
         String sql = """
                 UPDATE watchlist
                 SET name = :name, description = :description, visibility = :visibility, updated_at = now()
@@ -68,9 +68,9 @@ public class WatchlistRepository {
                 """.formatted(SELECT_COLUMNS);
         var params = new MapSqlParameterSource()
                 .addValue("id", id)
-                .addValue("name", name)
-                .addValue("description", description)
-                .addValue("visibility", visibility.name());
+                .addValue("name", watchlist.getName())
+                .addValue("description", watchlist.getDescription())
+                .addValue("visibility", watchlist.getVisibility().name());
         List<Watchlist> results = jdbcTemplate.query(sql, params, ROW_MAPPER);
         return results.stream().findFirst();
     }
