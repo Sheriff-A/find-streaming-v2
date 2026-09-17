@@ -3,6 +3,8 @@ package org.sheriffa.backend.watchlist;
 import jakarta.validation.Valid;
 import org.sheriffa.backend.watchlist.dto.CreateWatchlistRequest;
 import org.sheriffa.backend.watchlist.dto.GetWatchlistResponse;
+import org.sheriffa.backend.watchlist.dto.PatchWatchlistRequest;
+import org.sheriffa.backend.watchlist.dto.UpdateWatchlistRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,7 +43,15 @@ public class WatchlistController {
     }
 
     @PutMapping("/{watchlistId}")
-    public void updateWatchlist(@PathVariable UUID watchlistId) {
+    public ResponseEntity<GetWatchlistResponse> updateWatchlist(@PathVariable UUID watchlistId, @Valid @RequestBody UpdateWatchlistRequest request) {
+        Watchlist response = watchlistService.updateWatchlist(watchlistId, CURRENT_OWNER_ID, request.name(), request.description(), request.visibility());
+        return ResponseEntity.ok(GetWatchlistResponse.from(response));
+    }
+
+    @PatchMapping("/{watchlistId}")
+    public ResponseEntity<GetWatchlistResponse> patchWatchlist(@PathVariable UUID watchlistId, @Valid @RequestBody PatchWatchlistRequest request) {
+        Watchlist response = watchlistService.patchWatchlist(watchlistId, CURRENT_OWNER_ID, request.name(), request.description(), request.visibility());
+        return ResponseEntity.ok(GetWatchlistResponse.from(response));
     }
 
     @PostMapping("/")
@@ -53,7 +63,9 @@ public class WatchlistController {
     }
 
     @DeleteMapping("/{watchlistId}")
-    public void deleteWatchlist(@PathVariable UUID watchlistId) {
+    public ResponseEntity<Void> deleteWatchlist(@PathVariable UUID watchlistId) {
+        watchlistService.deleteWatchlist(watchlistId, CURRENT_OWNER_ID);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{watchlistId}/media")
@@ -62,6 +74,10 @@ public class WatchlistController {
 
     @PutMapping("/{watchlistId}/media")
     public void updateWatchlistMedia(@PathVariable UUID watchlistId) {
+    }
+
+    @PatchMapping("/{watchlistId}/media")
+    public void patchWatchlistMedia(@PathVariable UUID watchlistId) {
     }
 
     @PostMapping("/{watchlistId}/media")
