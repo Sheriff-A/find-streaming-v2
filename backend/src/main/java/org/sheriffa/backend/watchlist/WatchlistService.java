@@ -10,11 +10,14 @@ import java.util.UUID;
 public class WatchlistService {
 
     private final WatchlistRepository watchlistRepository;
+    private final WatchlistItemRepository watchlistItemRepository;
 
-    public WatchlistService(WatchlistRepository watchlistRepository) {
+    public WatchlistService(WatchlistRepository watchlistRepository, WatchlistItemRepository watchlistItemRepository) {
         this.watchlistRepository = watchlistRepository;
+        this.watchlistItemRepository = watchlistItemRepository;
     }
 
+    // Check if the watchlist exists, and if not, throw a NotFoundException
     private Watchlist optionalGetWatchList(UUID id) {
         return watchlistRepository.findById(id)
                 .orElseThrow(() -> new WatchlistNotFoundException(id));
@@ -87,5 +90,19 @@ public class WatchlistService {
 
         Watchlist toPatch = new Watchlist(id, requesterId, updatedName, updatedDescription, updatedVisibility, null, null);
         return watchlistRepository.update(id, toPatch).orElseThrow(() -> new WatchlistNotFoundException(id));
+    }
+
+    public List<WatchlistItem> getWatchlistItemsInWatchlist(UUID id, UUID requesterId) {
+        Watchlist watchlist = optionalGetWatchList(id);
+
+        if (!isWatchlistOwner(watchlist, requesterId)) {
+            // A non-owner asking to get items in a watchlist
+            // Forbidden.
+            // Cannot get items in a watchlist that's not yours.'
+            throw new WatchlistForbiddenException(id);
+        }
+
+        return watchlistItemRepository.findAllByWatchlistId(id);
+
     }
 }
