@@ -1,0 +1,6 @@
+### Variables
+@watchlistId = ecb15e97-169c-48b4-a9ad-44c124c080b6
+@watchlistMediaId = 123
+
+### Get All Watchlist Media by Watchlist ID (UUID)
+GET localhost:8080/api/v1/watchlist/{{watchlistId}}/media
