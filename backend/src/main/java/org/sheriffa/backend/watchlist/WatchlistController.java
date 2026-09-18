@@ -70,7 +70,14 @@ public class WatchlistController {
 
     // Get Watchlist Items in the Watchlist with ID: {{ watchlistId }}
     @GetMapping("/{watchlistId}/media")
-    public void getWatchlistMedia(@PathVariable UUID watchlistId) {
+    public ResponseEntity<List<GetWatchlistItemResponse>> getWatchlistMedia(@PathVariable UUID watchlistId) {
+        List<GetWatchlistItemResponse> response =
+                watchlistService
+                        .getWatchlistItemsInWatchlist(watchlistId, CURRENT_OWNER_ID)
+                        .stream()
+                        .map(GetWatchlistItemResponse::from)
+                        .toList();
+        return ResponseEntity.ok(response);
     }
 
     // Update Watchlist Item with ID: {{ watchlistItemId}}, in the Watchlist with ID: {{ watchlistId }}
