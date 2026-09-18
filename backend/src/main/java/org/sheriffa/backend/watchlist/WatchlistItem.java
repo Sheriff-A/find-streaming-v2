@@ -16,7 +16,7 @@ public class WatchlistItem {
     private String media_id;
     private WatchlistItemMediaType media_type;
     private int position;
-    private Object metadata;
+    private String metadata;
     private OffsetDateTime created_at;
     private OffsetDateTime updated_at;
 }
