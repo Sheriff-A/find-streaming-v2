@@ -68,23 +68,28 @@ public class WatchlistController {
         return ResponseEntity.noContent().build();
     }
 
+    // Get Watchlist Items in the Watchlist with ID: {{ watchlistId }}
     @GetMapping("/{watchlistId}/media")
     public void getWatchlistMedia(@PathVariable UUID watchlistId) {
     }
 
-    @PutMapping("/{watchlistId}/media")
-    public void updateWatchlistMedia(@PathVariable UUID watchlistId) {
+    // Update Watchlist Item with ID: {{ watchlistItemId}}, in the Watchlist with ID: {{ watchlistId }}
+    @PutMapping("/{watchlistId}/media/{watchlistItemId}")
+    public void updateWatchlistMedia(@PathVariable UUID watchlistId, @PathVariable UUID watchlistItemId) {
     }
 
-    @PatchMapping("/{watchlistId}/media")
-    public void patchWatchlistMedia(@PathVariable UUID watchlistId) {
+    // Patch Watchlist Item with ID: {{ watchlistItemId}}, in the Watchlist with ID: {{ watchlistId }}
+    @PatchMapping("/{watchlistId}/media/{watchlistItemId}")
+    public void patchWatchlistMedia(@PathVariable UUID watchlistId, @PathVariable UUID watchlistItemId) {
     }
 
+    // Add Watchlist Item to the Watchlist with ID: {{ watchlistId }}
     @PostMapping("/{watchlistId}/media")
     public void addWatchlistMedia(@PathVariable UUID watchlistId) {
     }
 
-    @DeleteMapping("/{watchlistId}/media")
-    public void removeWatchlistMedia(@PathVariable UUID watchlistId) {
+    // Remove Watchlist Item with ID: {{ watchlistItemId}}, from the Watchlist with ID: {{ watchlistId }}
+    @DeleteMapping("/{watchlistId}/media/{watchlistItemId}")
+    public void removeWatchlistMedia(@PathVariable UUID watchlistId, @PathVariable UUID watchlistItemId) {
     }
 }
