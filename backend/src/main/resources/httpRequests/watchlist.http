@@ -1,5 +1,5 @@
 ### Variables
-@watchlistId = f76b42d9-6cc5-4f98-bdff-60ee1fd4fe0f
+@watchlistId = ecb15e97-169c-48b4-a9ad-44c124c080b6
 
 ### Get All Watchlists
 GET localhost:8080/api/v1/watchlist/
