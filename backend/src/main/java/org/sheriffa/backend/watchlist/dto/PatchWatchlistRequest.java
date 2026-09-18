@@ -17,7 +17,7 @@ public record PatchWatchlistRequest(
     // Description is optional, but if it is provided, it cannot be blank
 
     // Alternative approach to custom Bean Validation (see name)
-    // This best when there is not much logic to reuse
+    // This is best when there is not much logic to reuse
     @AssertTrue(message = "Description cannot be blank")
     public boolean isDescriptionValid() {
         return description == null || !description.isBlank();
