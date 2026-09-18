@@ -1,1 +1,39 @@
+### Variables
+@watchlistId = f76b42d9-6cc5-4f98-bdff-60ee1fd4fe0f
+
+### Get All Watchlists
 GET localhost:8080/api/v1/watchlist/
+
+### Get Watchlist by ID (UUID)
+GET localhost:8080/api/v1/watchlist/{{watchlistId}}
+
+### Put Watchlist by ID (UUID)
+PUT localhost:8080/api/v1/watchlist/{{watchlistId}}
+Content-Type: application/json
+
+{
+  "name": "TEST - Watchlist Put Update",
+  "description": "TEST - Watchlist Description Put Update",
+  "visibility": "PUBLIC"
+}
+
+### Patch Watchlist by ID (UUID)
+PATCH localhost:8080/api/v1/watchlist/{{watchlistId}}
+Content-Type: application/json
+
+{
+  "name": "TEST - Watchlist Patch Update"
+}
+
+### Post Watchlist by ID
+POST localhost:8080/api/v1/watchlist/
+Content-Type: application/json
+
+{
+  "name": "TEST - New Watchlist",
+  "description": "TEST - New Watchlist Description",
+  "visibility": "PUBLIC"
+}
+
+### Delete Watchlist by ID (UUID)
+DELETE localhost:8080/api/v1/watchlist/{{watchlistId}}
