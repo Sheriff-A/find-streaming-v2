@@ -1,10 +1,7 @@
 package org.sheriffa.backend.watchlist;
 
 import jakarta.validation.Valid;
-import org.sheriffa.backend.watchlist.dto.CreateWatchlistRequest;
-import org.sheriffa.backend.watchlist.dto.GetWatchlistResponse;
-import org.sheriffa.backend.watchlist.dto.PatchWatchlistRequest;
-import org.sheriffa.backend.watchlist.dto.UpdateWatchlistRequest;
+import org.sheriffa.backend.watchlist.dto.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,9 +27,12 @@ public class WatchlistController {
 
     @GetMapping("/")
     public ResponseEntity<List<GetWatchlistResponse>> getAllWatchlist() {
-        List<GetWatchlistResponse> response = watchlistService.getWatchlistForOwner(CURRENT_OWNER_ID).stream()
-                .map(GetWatchlistResponse::from)
-                .toList();
+        List<GetWatchlistResponse> response =
+                watchlistService
+                        .getWatchlistForOwner(CURRENT_OWNER_ID)
+                        .stream()
+                        .map(GetWatchlistResponse::from)
+                        .toList();
         return ResponseEntity.ok(response);
     }
 
@@ -44,19 +44,36 @@ public class WatchlistController {
 
     @PutMapping("/{watchlistId}")
     public ResponseEntity<GetWatchlistResponse> updateWatchlist(@PathVariable UUID watchlistId, @Valid @RequestBody UpdateWatchlistRequest request) {
-        Watchlist response = watchlistService.updateWatchlist(watchlistId, CURRENT_OWNER_ID, request.name(), request.description(), request.visibility());
+        Watchlist response = watchlistService.updateWatchlist(
+                watchlistId,
+                CURRENT_OWNER_ID,
+                request.name(),
+                request.description(),
+                request.visibility()
+        );
         return ResponseEntity.ok(GetWatchlistResponse.from(response));
     }
 
     @PatchMapping("/{watchlistId}")
     public ResponseEntity<GetWatchlistResponse> patchWatchlist(@PathVariable UUID watchlistId, @Valid @RequestBody PatchWatchlistRequest request) {
-        Watchlist response = watchlistService.patchWatchlist(watchlistId, CURRENT_OWNER_ID, request.name(), request.description(), request.visibility());
+        Watchlist response = watchlistService.patchWatchlist(
+                watchlistId,
+                CURRENT_OWNER_ID,
+                request.name(),
+                request.description(),
+                request.visibility()
+        );
         return ResponseEntity.ok(GetWatchlistResponse.from(response));
     }
 
     @PostMapping("/")
     public ResponseEntity<GetWatchlistResponse> createWatchlist(@Valid @RequestBody CreateWatchlistRequest request) {
-        Watchlist watchlist = watchlistService.createWatchlist(CURRENT_OWNER_ID, request.name(), request.description(), request.visibility());
+        Watchlist watchlist = watchlistService.createWatchlist(
+                CURRENT_OWNER_ID,
+                request.name(),
+                request.description(),
+                request.visibility()
+        );
         URI location = URI.create("/api/v1/watchlist/" + watchlist.getId());
         return ResponseEntity.created(location).body(GetWatchlistResponse.from(watchlist));
 
