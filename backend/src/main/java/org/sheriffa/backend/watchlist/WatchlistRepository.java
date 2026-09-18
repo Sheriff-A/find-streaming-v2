@@ -51,7 +51,7 @@ public class WatchlistRepository {
                 VALUES (:ownerId, :name, :description, :visibility)
                 RETURNING %s
                 """.formatted(SELECT_COLUMNS);
-        var params = new MapSqlParameterSource()
+        MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("ownerId", watchlist.getOwnerId())
                 .addValue("name", watchlist.getName())
                 .addValue("description", watchlist.getDescription())
@@ -66,7 +66,7 @@ public class WatchlistRepository {
                 WHERE id = :id
                 RETURNING %s
                 """.formatted(SELECT_COLUMNS);
-        var params = new MapSqlParameterSource()
+        MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("id", id)
                 .addValue("name", watchlist.getName())
                 .addValue("description", watchlist.getDescription())
@@ -75,8 +75,8 @@ public class WatchlistRepository {
         return results.stream().findFirst();
     }
 
-    public boolean deleteById(UUID id) {
+    public void deleteById(UUID id) {
         String sql = "DELETE FROM watchlist WHERE id = :id";
-        return jdbcTemplate.update(sql, new MapSqlParameterSource("id", id)) > 0;
+        jdbcTemplate.update(sql, new MapSqlParameterSource("id", id));
     }
 }
