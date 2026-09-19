@@ -12,11 +12,11 @@ import java.util.UUID;
 @NoArgsConstructor
 public class WatchlistItem {
     private UUID id;
-    private UUID watchlist_id;
-    private String media_id;
-    private WatchlistItemMediaType media_type;
+    private UUID watchlistId;
+    private String mediaId;
+    private WatchlistItemMediaType mediaType;
     private int position;
-    private String metadata;
-    private OffsetDateTime created_at;
-    private OffsetDateTime updated_at;
+    private String metadata; // TODO: Type this with what data I need to store so the item can be displayed properly
+    private OffsetDateTime createdAt;
+    private OffsetDateTime updatedAt;
 }
