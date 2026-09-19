@@ -8,24 +8,24 @@ import java.util.UUID;
 
 public record GetWatchlistItemResponse(
         UUID id,
-        UUID watchlist_id,
-        String media_id,
-        WatchlistItemMediaType media_type,
+        UUID watchlistId,
+        String mediaId,
+        WatchlistItemMediaType mediaType,
         int position,
         String metadata,
-        OffsetDateTime created_at,
-        OffsetDateTime updated_at
+        OffsetDateTime createdAt,
+        OffsetDateTime updatedAt
 ) {
     public static GetWatchlistItemResponse from(WatchlistItem watchlistItem) {
         return new GetWatchlistItemResponse(
                 watchlistItem.getId(),
-                watchlistItem.getWatchlist_id(),
-                watchlistItem.getMedia_id(),
-                watchlistItem.getMedia_type(),
+                watchlistItem.getWatchlistId(),
+                watchlistItem.getMediaId(),
+                watchlistItem.getMediaType(),
                 watchlistItem.getPosition(),
                 watchlistItem.getMetadata(),
-                watchlistItem.getCreated_at(),
-                watchlistItem.getUpdated_at()
+                watchlistItem.getCreatedAt(),
+                watchlistItem.getUpdatedAt()
         );
     }
 }
