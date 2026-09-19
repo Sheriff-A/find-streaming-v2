@@ -4,3 +4,13 @@
 
 ### Get All Watchlist Media by Watchlist ID (UUID)
 GET localhost:8080/api/v1/watchlist/{{watchlistId}}/media
+
+### Add Watchlist Media by Watchlist ID (UUID)
+POST localhost:8080/api/v1/watchlist/{{watchlistId}}/media
+Content-Type: application/json
+
+{
+  "mediaId": "TEST-1000",
+  "mediaType": "MOVIE",
+  "metadata": "{\"title\": \"Sample Movie Title\", \"rating\": 8.5, \"poster\":\"example.co\"}"
+}
