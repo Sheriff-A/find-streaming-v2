@@ -90,7 +90,7 @@ public class WatchlistController {
     public ResponseEntity<List<GetWatchlistItemResponse>> getWatchlistMedia(@PathVariable UUID watchlistId) {
         List<GetWatchlistItemResponse> response =
                 watchlistService
-                        .getWatchlistItemsInWatchlist(watchlistId, CURRENT_OWNER_ID)
+                        .getWatchlistItems(watchlistId, CURRENT_OWNER_ID)
                         .stream()
                         .map(GetWatchlistItemResponse::from)
                         .toList();
@@ -109,7 +109,17 @@ public class WatchlistController {
 
     // Add Watchlist Item to the Watchlist with ID: {{ watchlistId }}
     @PostMapping("/{watchlistId}/media")
-    public void addWatchlistMedia(@PathVariable UUID watchlistId) {
+    public ResponseEntity<GetWatchlistItemResponse> addWatchlistMedia(@PathVariable UUID watchlistId, @Valid @RequestBody CreateWatchlistItemRequest request) {
+        WatchlistItem watchlistItem = watchlistService.createWatchlistItem(
+                watchlistId,
+                CURRENT_OWNER_ID,
+                request.mediaId(),
+                request.mediaType(),
+                request.metadata()
+        );
+
+        URI location = URI.create("/api/v1/watchlist/" + watchlistId + "/media/" + watchlistItem.getId());
+        return ResponseEntity.created(location).body(GetWatchlistItemResponse.from(watchlistItem));
     }
 
     // Remove Watchlist Item with ID: {{ watchlistItemId}}, from the Watchlist with ID: {{ watchlistId }}
