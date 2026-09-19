@@ -12,6 +12,8 @@ import java.util.UUID;
 
 @Repository
 public class WatchlistItemRepository {
+    private final int POSITION_INCREMENT = 1000;
+
     private static final RowMapper<WatchlistItem> ROW_MAPPER = (rs, rowNum) -> new WatchlistItem(
             rs.getObject("id", UUID.class),
             rs.getObject("watchlist_id", UUID.class),
@@ -36,20 +38,31 @@ public class WatchlistItemRepository {
         return jdbcTemplate.query(sql, new MapSqlParameterSource("watchlistId", watchlistId), ROW_MAPPER);
     }
 
-    public WatchlistItem insert(UUID watchlistId, WatchlistItem watchlistItem) {
+    public WatchlistItem insert(WatchlistItem watchlistItem) {
         String sql = """
                 INSERT INTO watchlist_items (watchlist_id, media_id, media_type, position, metadata)
                 VALUES (:watchlistId, :mediaId, :mediaType, :position, :metadata)
                 RETURNING %s
                 """.formatted(SELECT_COLUMNS);
         MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("watchlistId", watchlistId)
-                .addValue("mediaId", watchlistItem.getMedia_id())
-                .addValue("mediaType", watchlistItem.getMedia_type().name())
+                .addValue("watchlistId", watchlistItem.getWatchlistId())
+                .addValue("mediaId", watchlistItem.getMediaId())
+                .addValue("mediaType", watchlistItem.getMediaType().name())
                 .addValue("position", watchlistItem.getPosition())
                 .addValue("metadata", watchlistItem.getMetadata(), Types.OTHER);
         return jdbcTemplate.queryForObject(sql, params, ROW_MAPPER);
     }
 
     // TODO: Implement update and delete watchlist items
+
+    // Get the next position for the new watchlistItem in the watchlist
+    public int nextPositionFor(UUID watchlistId) {
+        String sql = "SELECT COALESCE(MAX(position), 0) + " + POSITION_INCREMENT + " FROM watchlist_items WHERE watchlist_id = :watchlistId";
+        Integer next = jdbcTemplate.queryForObject(
+                sql,
+                new MapSqlParameterSource("watchlistId", watchlistId),
+                Integer.class
+        );
+        return next == null ? POSITION_INCREMENT : next;
+    }
 }
