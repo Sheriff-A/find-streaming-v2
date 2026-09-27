@@ -12,16 +12,18 @@ public record GetWatchlistResponse(
         String name,
         String description,
         WatchlistVisibility visibility,
+        long itemCount,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {
-    public static GetWatchlistResponse from(Watchlist watchlist) {
+    public static GetWatchlistResponse from(Watchlist watchlist, long itemsCount) {
         return new GetWatchlistResponse(
                 watchlist.getId(),
                 watchlist.getOwnerId(),
                 watchlist.getName(),
                 watchlist.getDescription(),
                 watchlist.getVisibility(),
+                itemsCount,
                 watchlist.getCreatedAt(),
                 watchlist.getUpdatedAt()
         );

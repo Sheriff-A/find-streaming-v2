@@ -4,8 +4,8 @@ import org.sheriffa.backend.common.NotFoundException;
 
 import java.util.UUID;
 
-public class WatchlistNotFoundException extends NotFoundException {
-    public WatchlistNotFoundException(UUID id) {
-        super("Watchlist not found: " + id);
+public class WatchlistItemNotFoundException extends NotFoundException {
+    public WatchlistItemNotFoundException(UUID id) {
+        super("Watchlist item not found: " + id);
     }
 }

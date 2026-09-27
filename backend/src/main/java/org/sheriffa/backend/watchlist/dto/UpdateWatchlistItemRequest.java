@@ -1,4 +1,13 @@
 package org.sheriffa.backend.watchlist.dto;
 
-public record UpdateWatchlistItemRequest() {
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import org.sheriffa.backend.watchlist.WatchlistItemMediaType;
+
+public record UpdateWatchlistItemRequest(
+        @NotBlank @Size(max = 255) String mediaId,
+        @NotNull WatchlistItemMediaType mediaType,
+        @NotNull String metadata
+) {
 }

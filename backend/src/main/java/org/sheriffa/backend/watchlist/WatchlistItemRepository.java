@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.sql.Types;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -38,13 +39,20 @@ public class WatchlistItemRepository {
         return jdbcTemplate.query(sql, new MapSqlParameterSource("watchlistId", watchlistId), ROW_MAPPER);
     }
 
+    public Optional<WatchlistItem> findById(UUID id) {
+        String sql = "SELECT " + SELECT_COLUMNS + " FROM watchlist_items WHERE id = :id";
+        List<WatchlistItem> results = jdbcTemplate.query(sql, new MapSqlParameterSource("id", id), ROW_MAPPER);
+        return results.stream().findFirst();
+    }
+
     public WatchlistItem insert(WatchlistItem watchlistItem) {
         String sql = """
-                INSERT INTO watchlist_items (watchlist_id, media_id, media_type, position, metadata)
-                VALUES (:watchlistId, :mediaId, :mediaType, :position, :metadata)
+                INSERT INTO watchlist_items (id, watchlist_id, media_id, media_type, position, metadata)
+                VALUES (COALESCE(:id, gen_random_uuid()), :watchlistId, :mediaId, :mediaType, :position, :metadata)
                 RETURNING %s
                 """.formatted(SELECT_COLUMNS);
         MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("id", watchlistItem.getId())
                 .addValue("watchlistId", watchlistItem.getWatchlistId())
                 .addValue("mediaId", watchlistItem.getMediaId())
                 .addValue("mediaType", watchlistItem.getMediaType().name())
@@ -53,7 +61,27 @@ public class WatchlistItemRepository {
         return jdbcTemplate.queryForObject(sql, params, ROW_MAPPER);
     }
 
-    // TODO: Implement update and delete watchlist items
+    public Optional<WatchlistItem> update(UUID id, WatchlistItem watchlistItem) {
+        String sql = """
+                UPDATE watchlist_items
+                SET media_id = :mediaId, media_type = :mediaType, position = :position, metadata = :metadata, updated_at = now()
+                WHERE id = :id
+                RETURNING %s
+                """.formatted(SELECT_COLUMNS);
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("id", id)
+                .addValue("mediaId", watchlistItem.getMediaId())
+                .addValue("mediaType", watchlistItem.getMediaType().name())
+                .addValue("position", watchlistItem.getPosition())
+                .addValue("metadata", watchlistItem.getMetadata(), Types.OTHER);
+        List<WatchlistItem> results = jdbcTemplate.query(sql, params, ROW_MAPPER);
+        return results.stream().findFirst();
+    }
+
+    public void deleteById(UUID id) {
+        String sql = "DELETE FROM watchlist_items WHERE id = :id";
+        jdbcTemplate.update(sql, new MapSqlParameterSource("id", id));
+    }
 
     // Get the next position for the new watchlistItem in the watchlist
     public int nextPositionFor(UUID watchlistId) {
