@@ -1,0 +1,114 @@
+### Variables
+@watchlistId = ecb15e97-169c-48b4-a9ad-44c124c080b6
+# Replace with a real id from a response below before running the
+# PUT/PATCH/DELETE "existing item" requests further down.
+@watchlistItemId = 123e4567-e89b-42d3-a456-556642440000
+# Ids guaranteed not to exist - used for 404 checks. Safe to reuse across
+# runs since nothing in this file creates a row at these ids.
+@nonexistentWatchlistId = 00000000-0000-0000-0000-999999999999
+@nonexistentWatchlistItemId = 00000000-0000-0000-0000-888888888888
+# Used only by the "Put ... creates when missing" test below, which does
+# create a real row here - kept separate from @nonexistentWatchlistItemId so
+# that doesn't interfere with the 404 checks that rely on that id staying empty.
+@putCreateWatchlistItemId = 00000000-0000-0000-0000-666666666666
+
+### Get All Watchlist Media by Watchlist ID (UUID)
+GET localhost:8080/api/v1/watchlist/{{watchlistId}}/media
+
+### Get All Watchlist Media - nonexistent watchlist (expect 404)
+GET localhost:8080/api/v1/watchlist/{{nonexistentWatchlistId}}/media
+
+### Add Watchlist Media by Watchlist ID (UUID)
+POST localhost:8080/api/v1/watchlist/{{watchlistId}}/media
+Content-Type: application/json
+
+{
+  "mediaId": "TEST-1000",
+  "mediaType": "MOVIE",
+  "metadata": "{\"title\": \"Sample Movie Title\", \"rating\": 8.5, \"poster\":\"example.co\"}"
+}
+
+### Add Watchlist Media - validation failure, blank mediaId (expect 400)
+POST localhost:8080/api/v1/watchlist/{{watchlistId}}/media
+Content-Type: application/json
+
+{
+  "mediaId": "",
+  "mediaType": "MOVIE",
+  "metadata": "{}"
+}
+
+### Add Watchlist Media - nonexistent watchlist (expect 404)
+POST localhost:8080/api/v1/watchlist/{{nonexistentWatchlistId}}/media
+Content-Type: application/json
+
+{
+  "mediaId": "TEST-1001",
+  "mediaType": "MOVIE",
+  "metadata": "{}"
+}
+
+### Put Watchlist Media by ID (UUID) - updates an existing item (expect 200)
+# Replace @watchlistItemId above with a real id from a POST response first
+PUT localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{watchlistItemId}}
+Content-Type: application/json
+
+{
+  "mediaId": "TEST-1000",
+  "mediaType": "MOVIE",
+  "metadata": "{\"title\": \"Updated Movie Title\", \"rating\": 9.0, \"poster\":\"example.co\"}"
+}
+
+### Put Watchlist Media by ID - creates when missing (expect 201, created at this exact id)
+# Run only once per id - after the first run this id exists, and re-running
+# this request hits the update path (200) instead of create (201).
+PUT localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{putCreateWatchlistItemId}}
+Content-Type: application/json
+
+{
+  "mediaId": "TEST-2000",
+  "mediaType": "TV_SHOW",
+  "metadata": "{\"title\": \"Sample Show\"}"
+}
+
+### Patch Watchlist Media by ID (UUID) - partial update, metadata only
+PATCH localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{watchlistItemId}}
+Content-Type: application/json
+
+{
+  "metadata": "{\"title\": \"Patched Title Only\"}"
+}
+
+### Patch Watchlist Media by ID - partial update, position only
+PATCH localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{watchlistItemId}}
+Content-Type: application/json
+
+{
+  "position": 5000
+}
+
+### Patch Watchlist Media by ID - validation failure, blank mediaId (expect 400)
+PATCH localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{watchlistItemId}}
+Content-Type: application/json
+
+{
+  "mediaId": ""
+}
+
+### Patch Watchlist Media by ID - nonexistent item (expect 404)
+PATCH localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{nonexistentWatchlistItemId}}
+Content-Type: application/json
+
+{
+  "metadata": "{}"
+}
+
+### Delete Watchlist Media by ID (UUID)
+# Replace @watchlistItemId above with a real id from a POST response first
+DELETE localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{watchlistItemId}}
+
+### Delete Watchlist Media by ID - nonexistent item (expect 404)
+DELETE localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{nonexistentWatchlistItemId}}
+
+### Cleanup - remove the item created by the "Put ... creates when missing" test
+DELETE localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{putCreateWatchlistItemId}}

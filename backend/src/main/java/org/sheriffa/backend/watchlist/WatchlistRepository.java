@@ -25,6 +25,19 @@ public class WatchlistRepository {
             rs.getObject("updated_at", OffsetDateTime.class)
     );
 
+    private static final RowMapper<WatchlistWithItemCount> WITH_ITEM_COUNT_ROW_MAPPER = (rs, rowNum) -> new WatchlistWithItemCount(
+            new Watchlist(
+                    rs.getObject("id", UUID.class),
+                    rs.getObject("owner_id", UUID.class),
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    WatchlistVisibility.valueOf(rs.getString("visibility")),
+                    rs.getObject("created_at", OffsetDateTime.class),
+                    rs.getObject("updated_at", OffsetDateTime.class)
+            ),
+            rs.getLong("item_count")
+    );
+
     private static final String SELECT_COLUMNS =
             "id, owner_id, name, description, visibility, created_at, updated_at";
 
@@ -45,13 +58,38 @@ public class WatchlistRepository {
         return results.stream().findFirst();
     }
 
+    public List<WatchlistWithItemCount> findAllWithItemCountByOwnerId(UUID ownerId) {
+        String sql = """
+                SELECT w.*, COUNT(wi.id) AS item_count
+                FROM watchlist w
+                LEFT JOIN watchlist_items wi ON w.id = wi.watchlist_id
+                WHERE w.owner_id = :ownerId
+                GROUP BY w.id, w.created_at
+                ORDER BY w.created_at DESC
+                """;
+        return jdbcTemplate.query(sql, new MapSqlParameterSource("ownerId", ownerId), WITH_ITEM_COUNT_ROW_MAPPER);
+    }
+
+    public Optional<WatchlistWithItemCount> findByIdWithItemCount(UUID watchlistId) {
+        String sql = """
+                SELECT w.*, COUNT(wi.id) AS item_count
+                FROM watchlist w
+                LEFT JOIN watchlist_items wi ON w.id = wi.watchlist_id
+                WHERE w.id = :watchlistId
+                GROUP BY w.id, w.created_at
+                """;
+        List<WatchlistWithItemCount> results = jdbcTemplate.query(sql, new MapSqlParameterSource("watchlistId", watchlistId), WITH_ITEM_COUNT_ROW_MAPPER);
+        return results.stream().findFirst();
+    }
+
     public Watchlist insert(Watchlist watchlist) {
         String sql = """
-                INSERT INTO watchlist (owner_id, name, description, visibility)
-                VALUES (:ownerId, :name, :description, :visibility)
+                INSERT INTO watchlist (id, owner_id, name, description, visibility)
+                VALUES (COALESCE(:id, gen_random_uuid()),:ownerId, :name, :description, :visibility)
                 RETURNING %s
                 """.formatted(SELECT_COLUMNS);
-        var params = new MapSqlParameterSource()
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("id", watchlist.getId())
                 .addValue("ownerId", watchlist.getOwnerId())
                 .addValue("name", watchlist.getName())
                 .addValue("description", watchlist.getDescription())
@@ -59,24 +97,24 @@ public class WatchlistRepository {
         return jdbcTemplate.queryForObject(sql, params, ROW_MAPPER);
     }
 
-    public Optional<Watchlist> update(UUID id, String name, String description, WatchlistVisibility visibility) {
+    public Optional<Watchlist> update(UUID id, Watchlist watchlist) {
         String sql = """
                 UPDATE watchlist
                 SET name = :name, description = :description, visibility = :visibility, updated_at = now()
                 WHERE id = :id
                 RETURNING %s
                 """.formatted(SELECT_COLUMNS);
-        var params = new MapSqlParameterSource()
+        MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("id", id)
-                .addValue("name", name)
-                .addValue("description", description)
-                .addValue("visibility", visibility.name());
+                .addValue("name", watchlist.getName())
+                .addValue("description", watchlist.getDescription())
+                .addValue("visibility", watchlist.getVisibility().name());
         List<Watchlist> results = jdbcTemplate.query(sql, params, ROW_MAPPER);
         return results.stream().findFirst();
     }
 
-    public boolean deleteById(UUID id) {
+    public void deleteById(UUID id) {
         String sql = "DELETE FROM watchlist WHERE id = :id";
-        return jdbcTemplate.update(sql, new MapSqlParameterSource("id", id)) > 0;
+        jdbcTemplate.update(sql, new MapSqlParameterSource("id", id));
     }
 }
