@@ -1,13 +1,28 @@
 ### Variables
 @watchlistId = ecb15e97-169c-48b4-a9ad-44c124c080b6
 
+# Ids that are guaranteed not to exist - used for 404 checks. Safe to reuse
+# across runs since nothing in this file ever creates a row at these ids.
+@nonexistentWatchlistId = 00000000-0000-0000-0000-999999999999
+
+# Used only by the "PUT creates when missing" test below, which does create
+# a real row here - kept separate from nonexistentWatchlistId above so that
+# doesn't interfere with the 404 checks that rely on that id staying empty.
+@putCreateWatchlistId = 00000000-0000-0000-0000-777777777777
+
 ### Get All Watchlists
 GET localhost:8080/api/v1/watchlist/
 
 ### Get Watchlist by ID (UUID)
 GET localhost:8080/api/v1/watchlist/{{watchlistId}}
 
-### Put Watchlist by ID (UUID)
+### Get Watchlist by ID - nonexistent (expect 404)
+GET localhost:8080/api/v1/watchlist/{{nonexistentWatchlistId}}
+
+### Get Watchlist by ID - malformed UUID (expect 400, not 500)
+GET localhost:8080/api/v1/watchlist/not-a-valid-uuid
+
+### Put Watchlist by ID (UUID) - updates an existing watchlist (expect 200)
 PUT localhost:8080/api/v1/watchlist/{{watchlistId}}
 Content-Type: application/json
 
@@ -17,12 +32,50 @@ Content-Type: application/json
   "visibility": "PUBLIC"
 }
 
+### Put Watchlist by ID - creates when missing (expect 201, created at this exact id)
+# Run only once per id - after the first run this id exists, and re-running
+# this request hits the update path (200) instead of create (201).
+PUT localhost:8080/api/v1/watchlist/{{putCreateWatchlistId}}
+Content-Type: application/json
+
+{
+  "name": "TEST - Watchlist Created Via Put",
+  "description": "TEST - Created because this id didn't exist yet",
+  "visibility": "PUBLIC"
+}
+
+### Put Watchlist by ID - validation failure, blank name (expect 400)
+PUT localhost:8080/api/v1/watchlist/{{watchlistId}}
+Content-Type: application/json
+
+{
+  "name": "",
+  "description": "TEST - blank name should fail validation",
+  "visibility": "PUBLIC"
+}
+
 ### Patch Watchlist by ID (UUID)
 PATCH localhost:8080/api/v1/watchlist/{{watchlistId}}
 Content-Type: application/json
 
 {
   "name": "TEST - Watchlist Patch Update"
+}
+
+### Patch Watchlist by ID - validation failure, blank name (expect 400)
+PATCH localhost:8080/api/v1/watchlist/{{watchlistId}}
+Content-Type: application/json
+
+{
+  "name": ""
+}
+
+### Patch Watchlist by ID - nonexistent (expect 404)
+PATCH localhost:8080/api/v1/watchlist/{{nonexistentWatchlistId}}
+Content-Type: application/json
+
+{
+  "name": "TEST - should 404, watchlist doesn't exist"
 }
 
 ### Post Watchlist by ID
@@ -35,5 +88,21 @@ Content-Type: application/json
   "visibility": "PUBLIC"
 }
 
+### Post Watchlist - validation failure, blank name (expect 400)
+POST localhost:8080/api/v1/watchlist/
+Content-Type: application/json
+
+{
+  "name": "",
+  "description": "TEST - blank name should fail validation",
+  "visibility": "PUBLIC"
+}
+
 ### Delete Watchlist by ID (UUID)
 DELETE localhost:8080/api/v1/watchlist/{{watchlistId}}
+
+### Delete Watchlist by ID - nonexistent (expect 404)
+DELETE localhost:8080/api/v1/watchlist/{{nonexistentWatchlistId}}
+
+### Cleanup - remove the watchlist created by the "Put ... creates when missing" test
+DELETE localhost:8080/api/v1/watchlist/{{putCreateWatchlistId}}
