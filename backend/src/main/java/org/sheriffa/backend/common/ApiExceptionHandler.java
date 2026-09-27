@@ -1,13 +1,13 @@
 package org.sheriffa.backend.common;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-
 import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
 
@@ -46,6 +46,14 @@ public class ApiExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, detail);
     }
 
+    // Thrown when a unique constraint is violated
+    // e.g., a watchlist with the same name already exists under the same owner
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<ApiError> handleDuplicateKey(DuplicateKeyException ex) {
+        log.warn("Duplicate key violation", ex);
+        return build(HttpStatus.CONFLICT, "This action conflicts with an existing resource.");
+    }
+
     // Catch-all for anything not handled above
     // Log the real exception server-side, but never hand its details to the client
     @ExceptionHandler(Exception.class)
@@ -53,4 +61,5 @@ public class ApiExceptionHandler {
         log.error("Unhandled exception", ex);
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong");
     }
+
 }
