@@ -16,12 +16,6 @@ import java.util.UUID;
 @RequestMapping("/api/v1/watchlist")
 public class WatchlistController {
 
-    // TODO:
-    // Seeded user, Alice, standing in for real auth
-    // Real auth will resolve the called from the request
-    // Every method below that needs "who's asking" should take it from the request
-    private static final UUID CURRENT_OWNER_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
-
     private final WatchlistService watchlistService;
 
     public WatchlistController(WatchlistService watchlistService) {
@@ -42,8 +36,8 @@ public class WatchlistController {
     }
 
     @GetMapping("/{watchlistId}")
-    public ResponseEntity<GetWatchlistResponse> getWatchlistById(@PathVariable UUID watchlistId) {
-        WatchlistWithItemCount response = watchlistService.getWatchlistById(watchlistId, CURRENT_OWNER_ID);
+    public ResponseEntity<GetWatchlistResponse> getWatchlistById(@PathVariable UUID watchlistId, @AuthenticationPrincipal AuthenticatedUser principal) {
+        WatchlistWithItemCount response = watchlistService.getWatchlistById(watchlistId, principal.getId());
         return ResponseEntity.ok(
                 GetWatchlistResponse.from(
                         response.watchlist(), response.itemCount()
@@ -52,10 +46,10 @@ public class WatchlistController {
     }
 
     @PutMapping("/{watchlistId}")
-    public ResponseEntity<GetWatchlistResponse> updateWatchlist(@PathVariable UUID watchlistId, @Valid @RequestBody UpdateWatchlistRequest request) {
+    public ResponseEntity<GetWatchlistResponse> updateWatchlist(@PathVariable UUID watchlistId, @Valid @RequestBody UpdateWatchlistRequest request, @AuthenticationPrincipal AuthenticatedUser principal) {
         PutResponseState<WatchlistWithItemCount> response = watchlistService.upsertWatchlist(
                 watchlistId,
-                CURRENT_OWNER_ID,
+                principal.getId(),
                 request.name(),
                 request.description(),
                 request.visibility()
@@ -79,10 +73,10 @@ public class WatchlistController {
     }
 
     @PatchMapping("/{watchlistId}")
-    public ResponseEntity<GetWatchlistResponse> patchWatchlist(@PathVariable UUID watchlistId, @Valid @RequestBody PatchWatchlistRequest request) {
+    public ResponseEntity<GetWatchlistResponse> patchWatchlist(@PathVariable UUID watchlistId, @Valid @RequestBody PatchWatchlistRequest request, @AuthenticationPrincipal AuthenticatedUser principal) {
         WatchlistWithItemCount response = watchlistService.patchWatchlist(
                 watchlistId,
-                CURRENT_OWNER_ID,
+                principal.getId(),
                 request.name(),
                 request.description(),
                 request.visibility()
@@ -95,10 +89,10 @@ public class WatchlistController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<GetWatchlistResponse> createWatchlist(@Valid @RequestBody CreateWatchlistRequest request) {
+    public ResponseEntity<GetWatchlistResponse> createWatchlist(@Valid @RequestBody CreateWatchlistRequest request, @AuthenticationPrincipal AuthenticatedUser principal) {
         WatchlistWithItemCount watchlistWithItemCount = watchlistService.createWatchlist(
                 null,
-                CURRENT_OWNER_ID,
+                principal.getId(),
                 request.name(),
                 request.description(),
                 request.visibility()
@@ -114,17 +108,17 @@ public class WatchlistController {
     }
 
     @DeleteMapping("/{watchlistId}")
-    public ResponseEntity<Void> deleteWatchlist(@PathVariable UUID watchlistId) {
-        watchlistService.deleteWatchlist(watchlistId, CURRENT_OWNER_ID);
+    public ResponseEntity<Void> deleteWatchlist(@PathVariable UUID watchlistId, @AuthenticationPrincipal AuthenticatedUser principal) {
+        watchlistService.deleteWatchlist(watchlistId, principal.getId());
         return ResponseEntity.noContent().build();
     }
 
     // Get Watchlist Items in the Watchlist with ID: {{ watchlistId }}
     @GetMapping("/{watchlistId}/media")
-    public ResponseEntity<List<GetWatchlistItemResponse>> getWatchlistMedia(@PathVariable UUID watchlistId) {
+    public ResponseEntity<List<GetWatchlistItemResponse>> getWatchlistMedia(@PathVariable UUID watchlistId, @AuthenticationPrincipal AuthenticatedUser principal) {
         List<GetWatchlistItemResponse> response =
                 watchlistService
-                        .getWatchlistItems(watchlistId, CURRENT_OWNER_ID)
+                        .getWatchlistItems(watchlistId, principal.getId())
                         .stream()
                         .map(GetWatchlistItemResponse::from)
                         .toList();
@@ -133,11 +127,11 @@ public class WatchlistController {
 
     // Update Watchlist Item with ID: {{ watchlistItemId}}, in the Watchlist with ID: {{ watchlistId }}
     @PutMapping("/{watchlistId}/media/{watchlistItemId}")
-    public ResponseEntity<GetWatchlistItemResponse> updateWatchlistMedia(@PathVariable UUID watchlistId, @PathVariable UUID watchlistItemId, @Valid @RequestBody UpdateWatchlistItemRequest request) {
+    public ResponseEntity<GetWatchlistItemResponse> updateWatchlistMedia(@PathVariable UUID watchlistId, @PathVariable UUID watchlistItemId, @Valid @RequestBody UpdateWatchlistItemRequest request, @AuthenticationPrincipal AuthenticatedUser principal) {
         PutResponseState<WatchlistItem> response = watchlistService.upsertWatchlistItem(
                 watchlistId,
                 watchlistItemId,
-                CURRENT_OWNER_ID,
+                principal.getId(),
                 request.mediaId(),
                 request.mediaType(),
                 request.metadata()
@@ -158,11 +152,11 @@ public class WatchlistController {
 
     // Patch Watchlist Item with ID: {{ watchlistItemId}}, in the Watchlist with ID: {{ watchlistId }}
     @PatchMapping("/{watchlistId}/media/{watchlistItemId}")
-    public ResponseEntity<GetWatchlistItemResponse> patchWatchlistMedia(@PathVariable UUID watchlistId, @PathVariable UUID watchlistItemId, @Valid @RequestBody PatchWatchlistItemRequest request) {
+    public ResponseEntity<GetWatchlistItemResponse> patchWatchlistMedia(@PathVariable UUID watchlistId, @PathVariable UUID watchlistItemId, @Valid @RequestBody PatchWatchlistItemRequest request, @AuthenticationPrincipal AuthenticatedUser principal) {
         WatchlistItem response = watchlistService.patchWatchlistItem(
                 watchlistId,
                 watchlistItemId,
-                CURRENT_OWNER_ID,
+                principal.getId(),
                 request.mediaId(),
                 request.mediaType(),
                 request.metadata(),
@@ -173,11 +167,11 @@ public class WatchlistController {
 
     // Add Watchlist Item to the Watchlist with ID: {{ watchlistId }}
     @PostMapping("/{watchlistId}/media")
-    public ResponseEntity<GetWatchlistItemResponse> addWatchlistMedia(@PathVariable UUID watchlistId, @Valid @RequestBody CreateWatchlistItemRequest request) {
+    public ResponseEntity<GetWatchlistItemResponse> addWatchlistMedia(@PathVariable UUID watchlistId, @Valid @RequestBody CreateWatchlistItemRequest request, @AuthenticationPrincipal AuthenticatedUser principal) {
         WatchlistItem watchlistItem = watchlistService.createWatchlistItem(
                 null,
                 watchlistId,
-                CURRENT_OWNER_ID,
+                principal.getId(),
                 request.mediaId(),
                 request.mediaType(),
                 request.metadata()
@@ -189,8 +183,8 @@ public class WatchlistController {
 
     // Remove Watchlist Item with ID: {{ watchlistItemId}}, from the Watchlist with ID: {{ watchlistId }}
     @DeleteMapping("/{watchlistId}/media/{watchlistItemId}")
-    public ResponseEntity<Void> removeWatchlistMedia(@PathVariable UUID watchlistId, @PathVariable UUID watchlistItemId) {
-        watchlistService.deleteWatchlistItem(watchlistId, watchlistItemId, CURRENT_OWNER_ID);
+    public ResponseEntity<Void> removeWatchlistMedia(@PathVariable UUID watchlistId, @PathVariable UUID watchlistItemId, @AuthenticationPrincipal AuthenticatedUser principal) {
+        watchlistService.deleteWatchlistItem(watchlistId, watchlistItemId, principal.getId());
         return ResponseEntity.noContent().build();
     }
 }
