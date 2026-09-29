@@ -2,8 +2,10 @@ package org.sheriffa.backend.watchlist;
 
 import jakarta.validation.Valid;
 import org.sheriffa.backend.common.PutResponseState;
+import org.sheriffa.backend.security.AuthenticatedUser;
 import org.sheriffa.backend.watchlist.dto.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -27,10 +29,10 @@ public class WatchlistController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<List<GetWatchlistResponse>> getAllWatchlist() {
+    public ResponseEntity<List<GetWatchlistResponse>> getAllWatchlist(@AuthenticationPrincipal AuthenticatedUser principal) {
         List<GetWatchlistResponse> response =
                 watchlistService
-                        .getWatchlistForOwner(CURRENT_OWNER_ID)
+                        .getWatchlistForOwner(principal.getId())
                         .stream()
                         .map((wl) ->
                                 GetWatchlistResponse.from(wl.watchlist(), wl.itemCount())
