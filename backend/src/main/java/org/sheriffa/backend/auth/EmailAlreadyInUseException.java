@@ -1,4 +1,9 @@
-package org.sheriffa.backend.auth.dto;
+package org.sheriffa.backend.auth;
 
-public class EmailAlreadyInUseException {
+import org.sheriffa.backend.common.ConflictException;
+
+public class EmailAlreadyInUseException extends ConflictException {
+    public EmailAlreadyInUseException(String email) {
+        super("Email already in use: " + email);
+    }
 }
