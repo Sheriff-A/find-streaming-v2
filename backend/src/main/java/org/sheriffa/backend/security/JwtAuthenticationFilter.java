@@ -67,5 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // SecurityConfig + RestAuthEntryPoint handles rejecting it if the endpoint requires auth.
             SecurityContextHolder.clearContext();
         }
+
+        filterChain.doFilter(request, response);
     }
 }
