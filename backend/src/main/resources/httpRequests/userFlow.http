@@ -1,5 +1,101 @@
-### GET request to example server
-GET https://examples.http-client.intellij.net/get
-    ?generated-in=IntelliJ IDEA
+### Variables
+@email = john@example.com
+@password = password123
+@email2 = jane@example.com
+@password2 = password123
 
-###
+### POST register user (expect 201, user created with access token. rerun expects 409, email already in use)
+POST localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### POST login user (expect 200, user logged in + token)
+POST localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+> {%
+    client.global.set("token", response.body.accessToken);
+%}
+
+### GET watchlists (authenticated, expect 200)
+GET localhost:8080/api/v1/watchlist/
+Authorization: Bearer {{token}}
+
+### GET watchlists - no token at all (expect 401)
+GET localhost:8080/api/v1/watchlist/
+
+### Post Watchlist (authenticated, expect 201)
+POST localhost:8080/api/v1/watchlist/
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "TEST - New Watchlist for John",
+  "description": "TEST - New Watchlist Description for John",
+  "visibility": "PUBLIC"
+}
+
+> {%
+    client.global.set("watchlistId", response.body.id);
+%}
+
+### GET watchlists (authenticated, expect 200, includes the one just created)
+GET localhost:8080/api/v1/watchlist/
+Authorization: Bearer {{token}}
+
+### GET watchlist by ID (authenticated, owner, expect 200)
+GET localhost:8080/api/v1/watchlist/{{watchlistId}}
+Authorization: Bearer {{token}}
+
+### --- Cross-user ownership checks ---
+### Register and log in a second user, Jane, to prove ownership is enforced
+### per-token (whose token, not just "is there a valid token").
+
+### POST register second user, Jane (expect 201, rerun expects 409)
+POST localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email2}}",
+  "password": "{{password2}}"
+}
+
+### POST login second user, Jane (expect 200, user logged in + token)
+POST localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email2}}",
+  "password": "{{password2}}"
+}
+
+> {%
+    client.global.set("token2", response.body.accessToken);
+%}
+
+### GET John's watchlist as Jane - it's PUBLIC, so viewing is allowed (expect 200)
+GET localhost:8080/api/v1/watchlist/{{watchlistId}}
+Authorization: Bearer {{token2}}
+
+### PATCH John's watchlist as Jane - not the owner, mutation isn't allowed
+### regardless of visibility (expect 403)
+PATCH localhost:8080/api/v1/watchlist/{{watchlistId}}
+Authorization: Bearer {{token2}}
+Content-Type: application/json
+
+{
+  "name": "TEST - Jane should not be able to do this"
+}
+
+### DELETE John's watchlist as Jane (expect 403)
+DELETE localhost:8080/api/v1/watchlist/{{watchlistId}}
+Authorization: Bearer {{token2}}
