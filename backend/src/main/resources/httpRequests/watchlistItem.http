@@ -12,14 +12,21 @@
 # that doesn't interfere with the 404 checks that rely on that id staying empty.
 @putCreateWatchlistItemId = 00000000-0000-0000-0000-666666666666
 
+# Every request below needs {{token}} populated - run the login request in
+# security.http or userFlow.http first in this HTTP Client session.
+# @watchlistId above must belong to whichever user {{token}} logs in as.
+
 ### Get All Watchlist Media by Watchlist ID (UUID)
 GET localhost:8080/api/v1/watchlist/{{watchlistId}}/media
+Authorization: Bearer {{token}}
 
 ### Get All Watchlist Media - nonexistent watchlist (expect 404)
 GET localhost:8080/api/v1/watchlist/{{nonexistentWatchlistId}}/media
+Authorization: Bearer {{token}}
 
 ### Add Watchlist Media by Watchlist ID (UUID)
 POST localhost:8080/api/v1/watchlist/{{watchlistId}}/media
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -30,6 +37,7 @@ Content-Type: application/json
 
 ### Add Watchlist Media - validation failure, blank mediaId (expect 400)
 POST localhost:8080/api/v1/watchlist/{{watchlistId}}/media
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -40,6 +48,7 @@ Content-Type: application/json
 
 ### Add Watchlist Media - nonexistent watchlist (expect 404)
 POST localhost:8080/api/v1/watchlist/{{nonexistentWatchlistId}}/media
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -51,6 +60,7 @@ Content-Type: application/json
 ### Put Watchlist Media by ID (UUID) - updates an existing item (expect 200)
 # Replace @watchlistItemId above with a real id from a POST response first
 PUT localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{watchlistItemId}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -63,6 +73,7 @@ Content-Type: application/json
 # Run only once per id - after the first run this id exists, and re-running
 # this request hits the update path (200) instead of create (201).
 PUT localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{putCreateWatchlistItemId}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -73,6 +84,7 @@ Content-Type: application/json
 
 ### Patch Watchlist Media by ID (UUID) - partial update, metadata only
 PATCH localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{watchlistItemId}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -81,6 +93,7 @@ Content-Type: application/json
 
 ### Patch Watchlist Media by ID - partial update, position only
 PATCH localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{watchlistItemId}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -89,6 +102,7 @@ Content-Type: application/json
 
 ### Patch Watchlist Media by ID - validation failure, blank mediaId (expect 400)
 PATCH localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{watchlistItemId}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -97,6 +111,7 @@ Content-Type: application/json
 
 ### Patch Watchlist Media by ID - nonexistent item (expect 404)
 PATCH localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{nonexistentWatchlistItemId}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -106,9 +121,12 @@ Content-Type: application/json
 ### Delete Watchlist Media by ID (UUID)
 # Replace @watchlistItemId above with a real id from a POST response first
 DELETE localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{watchlistItemId}}
+Authorization: Bearer {{token}}
 
 ### Delete Watchlist Media by ID - nonexistent item (expect 404)
 DELETE localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{nonexistentWatchlistItemId}}
+Authorization: Bearer {{token}}
 
 ### Cleanup - remove the item created by the "Put ... creates when missing" test
 DELETE localhost:8080/api/v1/watchlist/{{watchlistId}}/media/{{putCreateWatchlistItemId}}
+Authorization: Bearer {{token}}
