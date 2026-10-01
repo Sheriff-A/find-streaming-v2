@@ -63,7 +63,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiError> handleAuthentication(AuthenticationException ex) {
-        return build(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
+        return build(HttpStatus.UNAUTHORIZED, "Invalid credentials.");
     }
 
     // Catch-all for anything not handled above
