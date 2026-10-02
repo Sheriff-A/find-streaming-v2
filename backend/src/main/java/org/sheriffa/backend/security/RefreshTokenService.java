@@ -1,5 +1,6 @@
 package org.sheriffa.backend.security;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +13,7 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class RefreshTokenService {
 
@@ -41,16 +43,18 @@ public class RefreshTokenService {
         return rawToken;
     }
 
-    public String rotate(String rawToken) {
+    public RefreshResult rotate(String rawToken) {
         RefreshToken existing =
                 refreshTokenRepository.findByTokenHash(hash(rawToken))
                         .orElseThrow(() -> new BadCredentialsException("Invalid refresh token"));
         if (existing.getRevokedAt() != null || existing.getExpiresAt().isBefore(OffsetDateTime.now())) {
-            throw new BadCredentialsException("Refresh token has expired");
+            log.warn("Refresh token has been revoked or expired: {}", rawToken);
+            throw new BadCredentialsException("Invalid refresh token");
         }
 
         refreshTokenRepository.revoke(existing.getId());
-        return issue(existing.getUserId());
+        String newToken = issue(existing.getUserId());
+        return new RefreshResult(existing.getUserId(), newToken);
     }
 
     public void revoke(String rawToken) {
