@@ -1,16 +1,18 @@
 package org.sheriffa.backend.auth;
 
+import jakarta.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.sheriffa.backend.auth.dto.AuthResponse;
-import org.sheriffa.backend.security.AuthenticatedUser;
-import org.sheriffa.backend.security.JwtProperties;
-import org.sheriffa.backend.security.JwtService;
+import org.sheriffa.backend.security.*;
 import org.sheriffa.backend.user.*;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 public class AuthService {
 
@@ -20,6 +22,8 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
+    private final RefreshTokenService refreshTokenService;
+    private final AppUserDetailsService appUserDetailsService;
 
     public AuthService(
             UserRepository userRepository,
@@ -27,7 +31,9 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
             JwtService jwtService,
-            JwtProperties jwtProperties
+            JwtProperties jwtProperties,
+            RefreshTokenService refreshTokenService,
+            AppUserDetailsService appUserDetailsService
     ) {
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
@@ -35,6 +41,8 @@ public class AuthService {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.jwtProperties = jwtProperties;
+        this.refreshTokenService = refreshTokenService;
+        this.appUserDetailsService = appUserDetailsService;
     }
 
     @Transactional
@@ -53,18 +61,39 @@ public class AuthService {
         profile.setUser(user);
         profileRepository.save(profile);
 
-        return buildAuthResponse(new AuthenticatedUser(user));
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(user);
+        String refreshToken = refreshTokenService.issue(user.getId());
+
+        return buildAuthResponse(authenticatedUser, refreshToken);
     }
 
     public AuthResponse login(String email, String rawPassword) {
         var authRequest = new UsernamePasswordAuthenticationToken(email, rawPassword);
         var authResult = this.authenticationManager.authenticate(authRequest);
-        return buildAuthResponse((AuthenticatedUser) authResult.getPrincipal());
+        AuthenticatedUser user = (AuthenticatedUser) authResult.getPrincipal();
+        // False positive
+        // Authentication call either returns a fully authenticated user or throws an exception.
+        // Never returns null
+        @SuppressWarnings("DataFlowIssue")
+        String refreshToken = refreshTokenService.issue(user.getId());
+        return buildAuthResponse(user, refreshToken);
     }
 
-    private AuthResponse buildAuthResponse(AuthenticatedUser user) {
-        String token = this.jwtService.generateToken(user);
+    public AuthResponse refresh(String refreshToken) {
+        RefreshResult rotated = refreshTokenService.rotate(refreshToken);
+        AuthenticatedUser user = appUserDetailsService.loadUserById(rotated.userId());
+
+        if (!user.isEnabled()) {
+            log.warn("User {} is disabled", user.getId());
+            throw new BadCredentialsException("Invalid credentials");
+        }
+
+        return buildAuthResponse(user, rotated.refreshToken());
+    }
+
+    private AuthResponse buildAuthResponse(AuthenticatedUser user, String refreshToken) {
+        String accessToken = this.jwtService.generateToken(user);
         long expiresInSeconds = jwtProperties.expirationMinutes() * 60;
-        return new AuthResponse(token, "Bearer", expiresInSeconds, user.getId(), user.getUsername());
+        return new AuthResponse(accessToken, refreshToken, "Bearer", expiresInSeconds, user.getId(), user.getUsername());
     }
 }
