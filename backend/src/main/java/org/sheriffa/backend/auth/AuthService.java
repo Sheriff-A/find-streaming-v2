@@ -91,6 +91,10 @@ public class AuthService {
         return buildAuthResponse(user, rotated.refreshToken());
     }
 
+    public void logout(String refreshToken) {
+        refreshTokenService.revoke(refreshToken);
+    }
+
     private AuthResponse buildAuthResponse(AuthenticatedUser user, String refreshToken) {
         String accessToken = this.jwtService.generateToken(user);
         long expiresInSeconds = jwtProperties.expirationMinutes() * 60;
