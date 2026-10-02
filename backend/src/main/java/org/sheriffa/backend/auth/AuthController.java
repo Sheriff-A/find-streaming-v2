@@ -1,10 +1,7 @@
 package org.sheriffa.backend.auth;
 
 import jakarta.validation.Valid;
-import org.sheriffa.backend.auth.dto.AuthResponse;
-import org.sheriffa.backend.auth.dto.LoginRequest;
-import org.sheriffa.backend.auth.dto.MeResponse;
-import org.sheriffa.backend.auth.dto.RegisterRequest;
+import org.sheriffa.backend.auth.dto.*;
 import org.sheriffa.backend.security.AuthenticatedUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,5 +32,11 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<MeResponse> me(@AuthenticationPrincipal AuthenticatedUser principal) {
         return ResponseEntity.ok(MeResponse.from(principal));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        AuthResponse response = authService.refresh(request.refreshToken());
+        return ResponseEntity.ok(response);
     }
 }
