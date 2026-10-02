@@ -49,6 +49,30 @@ Content-Type: application/json
   "refreshToken": "{{oldRefreshToken}}"
 }
 
+### POST logout with the current refresh token (expect 204)
+POST localhost:8080/api/v1/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### POST logout again with the same token (expect 204, idempotent)
+POST localhost:8080/api/v1/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### POST refresh with the logged-out refresh token (expect 401)
+POST localhost:8080/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
 ### GET watchlists (authenticated, expect 200)
 GET localhost:8080/api/v1/watchlist/
 Authorization: Bearer {{token}}
