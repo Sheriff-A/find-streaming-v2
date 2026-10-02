@@ -24,7 +24,30 @@ Content-Type: application/json
 
 > {%
     client.global.set("token", response.body.accessToken);
+    client.global.set("refreshToken", response.body.refreshToken);
+    client.global.set("oldRefreshToken", response.body.refreshToken);
 %}
+
+### POST refresh token (expect 200, new access + refresh token pair)
+POST localhost:8080/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+> {%
+    client.global.set("token", response.body.accessToken);
+    client.global.set("refreshToken", response.body.refreshToken);
+%}
+
+### POST refresh token - reusing the already-rotated-out token (expect 401)
+POST localhost:8080/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{oldRefreshToken}}"
+}
 
 ### GET watchlists (authenticated, expect 200)
 GET localhost:8080/api/v1/watchlist/
