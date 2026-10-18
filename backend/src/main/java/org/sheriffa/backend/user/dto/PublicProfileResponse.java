@@ -1,4 +1,11 @@
 package org.sheriffa.backend.user.dto;
 
-public record PublicProfileResponse() {
+import java.util.UUID;
+
+public record PublicProfileResponse(
+        UUID id,
+        String displayName,
+        String avatarUrl,
+        String bio
+) {
 }
