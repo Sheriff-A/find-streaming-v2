@@ -57,4 +57,12 @@ public class RefreshTokenRepository {
         MapSqlParameterSource params = new MapSqlParameterSource("id", id);
         jdbcTemplate.update(sql, params);
     }
+
+    public void revokeAllForUser(UUID userId) {
+        String sql = """
+                UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = :userId AND revoked_at IS NULL
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        jdbcTemplate.update(sql, params);
+    }
 }
