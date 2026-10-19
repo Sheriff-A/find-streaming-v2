@@ -1,0 +1,265 @@
+### Variables
+# This flow ends by deactivating John, and a deactivated email can't be reused
+# (register -> 409, login -> 401). To rerun the whole file, change both emails.
+@email = users-john@example.com
+@password = password123
+@email2 = users-jane@example.com
+@password2 = password123
+
+# Never matches a real row - used for the 404 check.
+@nonexistentUserId = 00000000-0000-0000-0000-999999999999
+
+### --- John: setup ---
+
+### 1a. POST register John (expect 201, rerun expects 409)
+POST localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### 1b. POST login John (expect 200, saves token / refreshToken / johnId)
+POST localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+> {%
+    client.global.set("token", response.body.accessToken);
+    client.global.set("refreshToken", response.body.refreshToken);
+    client.global.set("johnId", response.body.userId);
+%}
+
+### --- GET /users/me ---
+
+### 2. GET me (expect 200: displayName/avatarUrl/bio null, preferences {}, roles ["ROLE_USER"], status ACTIVE)
+GET localhost:8080/api/v1/users/me
+Authorization: Bearer {{token}}
+
+### 3. GET me - no token (expect 401)
+GET localhost:8080/api/v1/users/me
+
+### --- PATCH /users/me/profile ---
+
+### 4. PATCH displayName + bio + preferences (expect 200, values set, updatedAt changed)
+### Afterwards, check the DB column is {"theme": "dark", ...} and NOT a double-encoded string:
+###   SELECT preferences, jsonb_typeof(preferences) FROM profiles;   -- expect 'object'
+PATCH localhost:8080/api/v1/users/me/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "displayName": "John",
+  "bio": "I watch too many movies",
+  "avatarUrl": "https://example.com/john.png",
+  "preferences": {
+    "theme": "dark",
+    "region": "CA",
+    "services": ["netflix", "disney"]
+  }
+}
+
+### 5. PATCH empty body (expect 200, nothing changes - absent means unchanged)
+PATCH localhost:8080/api/v1/users/me/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### 6. PATCH only displayName (expect 200, bio/avatarUrl/preferences untouched)
+PATCH localhost:8080/api/v1/users/me/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "displayName": "Johnny"
+}
+
+### 7. PATCH preferences replaces the whole object, no merge (expect 200, only "theme" remains)
+PATCH localhost:8080/api/v1/users/me/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "preferences": {
+    "theme": "light"
+  }
+}
+
+### 8. PATCH bio: "" clears it (expect 200, bio null; avatarUrl still set)
+PATCH localhost:8080/api/v1/users/me/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "bio": ""
+}
+
+### 9. PATCH avatarUrl: "   " clears it too (expect 200, avatarUrl null)
+PATCH localhost:8080/api/v1/users/me/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "avatarUrl": "   "
+}
+
+### 10. PATCH - no token (expect 401)
+PATCH localhost:8080/api/v1/users/me/profile
+Content-Type: application/json
+
+{
+  "displayName": "Nope"
+}
+
+### --- PATCH validation failures (all expect 400) ---
+
+### 11a. blank displayName (400: displayName must not be blank)
+PATCH localhost:8080/api/v1/users/me/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "displayName": "   "
+}
+
+### 11b. displayName over 255 chars (400)
+PATCH localhost:8080/api/v1/users/me/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "displayName": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
+
+### 11c. bio over 255 chars (400)
+PATCH localhost:8080/api/v1/users/me/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "bio": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
+
+### 11d. preferences is a string, not an object (400)
+PATCH localhost:8080/api/v1/users/me/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "preferences": "hello"
+}
+
+### 11e. preferences is an array, not an object (400)
+PATCH localhost:8080/api/v1/users/me/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "preferences": [1, 2]
+}
+
+### --- Public profile: Jane looks at John ---
+
+### 12a. POST register Jane (expect 201, rerun expects 409)
+POST localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email2}}",
+  "password": "{{password2}}"
+}
+
+### 12b. POST login Jane (expect 200, saves token2)
+POST localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email2}}",
+  "password": "{{password2}}"
+}
+
+> {%
+    client.global.set("token2", response.body.accessToken);
+    client.global.set("janeId", response.body.userId);
+%}
+
+### 13. GET John's public profile as Jane
+### (expect 200: ONLY id, displayName, avatarUrl, bio - no email, roles, status, preferences)
+GET localhost:8080/api/v1/users/{{johnId}}
+Authorization: Bearer {{token2}}
+
+### 14. GET nonexistent user (expect 404)
+GET localhost:8080/api/v1/users/{{nonexistentUserId}}
+Authorization: Bearer {{token2}}
+
+### 15. GET malformed id (expect 400)
+GET localhost:8080/api/v1/users/not-a-uuid
+Authorization: Bearer {{token2}}
+
+### 16. GET public profile - no token (expect 401)
+GET localhost:8080/api/v1/users/{{johnId}}
+
+### 17. PATCH as Jane only touches Jane's profile - there is no id in the URL to tamper with.
+### (expect 200, Jane's displayName set)
+PATCH localhost:8080/api/v1/users/me/profile
+Authorization: Bearer {{token2}}
+Content-Type: application/json
+
+{
+  "displayName": "Jane"
+}
+
+### 18. GET John's public profile again - unchanged by Jane's PATCH (expect 200, displayName "Johnny")
+GET localhost:8080/api/v1/users/{{johnId}}
+Authorization: Bearer {{token2}}
+
+### --- Deactivation ---
+
+### 19. DELETE John's account (expect 204)
+DELETE localhost:8080/api/v1/users/me
+Authorization: Bearer {{token}}
+
+### 20. John's old ACCESS token - still cryptographically valid, rejected because
+### JwtAuthenticationFilter sees isEnabled() == false (expect 401)
+GET localhost:8080/api/v1/users/me
+Authorization: Bearer {{token}}
+
+### 21. John's REFRESH token - rejected because revokeAllForUser ran (expect 401)
+POST localhost:8080/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### 22. Jane looks at John's public profile - deactivated reads as not found (expect 404)
+GET localhost:8080/api/v1/users/{{johnId}}
+Authorization: Bearer {{token2}}
+
+### 23. John tries to log in again (expect 401)
+POST localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### 24. Someone re-registers John's email (expect 409 - soft delete keeps the email reserved)
+POST localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### 25. DELETE as John again with the dead token (expect 401, not 204 - can't deactivate twice)
+DELETE localhost:8080/api/v1/users/me
+Authorization: Bearer {{token}}

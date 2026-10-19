@@ -55,7 +55,7 @@ public class AuthService {
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
         user.getRoles().add(UserRole.USER);
-        user = userRepository.save(user);
+        user = userRepository.saveAndFlush(user);
 
         Profile profile = new Profile();
         profile.setUser(user);
