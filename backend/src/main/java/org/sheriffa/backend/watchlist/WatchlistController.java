@@ -22,7 +22,7 @@ public class WatchlistController {
         this.watchlistService = watchlistService;
     }
 
-    @GetMapping("/")
+    @GetMapping("")
     public ResponseEntity<List<GetWatchlistResponse>> getAllWatchlist(@AuthenticationPrincipal AuthenticatedUser principal) {
         List<GetWatchlistResponse> response =
                 watchlistService
