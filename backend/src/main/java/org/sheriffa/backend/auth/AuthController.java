@@ -1,5 +1,6 @@
 package org.sheriffa.backend.auth;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import org.sheriffa.backend.auth.dto.*;
 import org.sheriffa.backend.security.AuthenticatedUser;
@@ -8,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@SecurityRequirements
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
